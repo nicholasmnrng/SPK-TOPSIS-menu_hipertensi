@@ -138,3 +138,6 @@ db_data/
 # Build outputs
 /public/uploads/
 /public/downloads/
+
+.env.local
+.env.local.backup
