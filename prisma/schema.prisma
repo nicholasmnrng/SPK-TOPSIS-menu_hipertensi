@@ -1,0 +1,316 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum CriterionAttribute {
+  BENEFIT
+  COST
+}
+
+enum AuditAction {
+  REGISTER
+  LOGIN
+  LOGOUT
+  CREATE
+  UPDATE
+  DELETE
+  RESTORE
+  APPROVE_ACCOUNT
+  SUSPEND_ACCOUNT
+  ACTIVATE_ACCOUNT
+  RESET_PASSWORD
+  REVOKE_SESSIONS
+  IMPORT_DATA
+  CALCULATE_TOPSIS
+  EXPORT_REPORT
+  SYSTEM_ERROR
+  HEALTH_CHECK
+}
+
+enum RankingRunStatus {
+  SUCCESS
+  FAILED
+}
+
+enum ImportRunStatus {
+  PREVIEWED
+  SUCCESS
+  FAILED
+}
+
+model User {
+  id            String     @id @default(cuid())
+  name          String?
+  email         String     @unique
+  emailVerified Boolean    @default(false)
+  image         String?
+  role          String     @default("USER")
+  status        UserStatus @default(PENDING)
+  banned        Boolean?   @default(false)
+  banReason     String?
+  banExpires    DateTime?
+  approvedAt    DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  deletedAt     DateTime?
+
+  accounts    Account[]
+  sessions    Session[]
+  auditLogs   AuditLog[]
+  rankingRuns RankingRun[]
+  importRuns  ImportRun[]
+
+  @@index([role, status])
+  @@index([deletedAt])
+  @@map("user")
+}
+
+model Session {
+  id             String   @id @default(cuid())
+  expiresAt      DateTime
+  token          String   @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  ipAddress      String?
+  userAgent      String?
+  impersonatedBy String?
+  userId         String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+model Criterion {
+  id          String             @id @default(cuid())
+  code        String             @unique
+  name        String
+  description String?
+  unit        String
+  weight      Float
+  attribute   CriterionAttribute
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  deletedAt   DateTime?
+
+  values     FoodNutrient[]
+  guidelines CriterionGuideline[]
+
+  @@index([attribute])
+  @@index([deletedAt])
+  @@map("criteria")
+}
+
+model Guideline {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  title     String
+  issuer    String
+  year      Int
+  url       String
+  summary   String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  criteria CriterionGuideline[]
+
+  @@index([deletedAt])
+  @@map("guidelines")
+}
+
+model CriterionGuideline {
+  id          String  @id @default(cuid())
+  criterionId String
+  guidelineId String
+  note        String?
+
+  criterion Criterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+  guideline Guideline @relation(fields: [guidelineId], references: [id], onDelete: Cascade)
+
+  @@unique([criterionId, guidelineId])
+  @@map("criterion_guidelines")
+}
+
+model Food {
+  id             String    @id @default(cuid())
+  name           String
+  normalizedName String    @unique
+  slug           String    @unique
+  description    String?
+  source         String?
+  basisGram      Float     @default(100)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  nutrients      FoodNutrient[]
+  rankingResults RankingResult[]
+
+  @@index([name])
+  @@index([deletedAt])
+  @@map("foods")
+}
+
+model FoodNutrient {
+  id          String   @id @default(cuid())
+  foodId      String
+  criterionId String
+  value       Float?
+  note        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  food      Food      @relation(fields: [foodId], references: [id], onDelete: Cascade)
+  criterion Criterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+
+  @@unique([foodId, criterionId])
+  @@index([foodId])
+  @@index([criterionId])
+  @@map("food_nutrients")
+}
+
+model ImportRun {
+  id             String          @id @default(cuid())
+  fileName       String
+  fileType       String
+  status         ImportRunStatus
+  totalRows      Int
+  validRows      Int
+  incompleteRows Int
+  errorRows      Int
+  summary        Json?
+  errorMessage   String?
+  createdById    String?
+  createdAt      DateTime        @default(now())
+
+  createdBy User? @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([createdById])
+  @@map("import_runs")
+}
+
+model RankingRun {
+  id                String           @id @default(cuid())
+  status            RankingRunStatus @default(SUCCESS)
+  criteriaSnapshot  Json
+  guidelineSnapshot Json
+  matrixSnapshot    Json
+  normalizedMatrix  Json
+  weightedMatrix    Json
+  idealPositive     Json
+  idealNegative     Json
+  disclaimer        String
+  errorMessage      String?
+  createdById       String?
+  createdAt         DateTime         @default(now())
+
+  createdBy User?           @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  results   RankingResult[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([createdById])
+  @@map("ranking_runs")
+}
+
+model RankingResult {
+  id            String   @id @default(cuid())
+  rankingRunId  String
+  foodId        String
+  rank          Int
+  dPositive     Float
+  dNegative     Float
+  preference    Float
+  detail        Json
+  justification Json
+  createdAt     DateTime @default(now())
+
+  rankingRun RankingRun @relation(fields: [rankingRunId], references: [id], onDelete: Cascade)
+  food       Food       @relation(fields: [foodId], references: [id], onDelete: Restrict)
+
+  @@unique([rankingRunId, foodId])
+  @@index([rankingRunId, rank])
+  @@index([foodId])
+  @@index([preference])
+  @@map("ranking_results")
+}
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  actorId    String?
+  action     AuditAction
+  entityType String
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime    @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model HealthCheck {
+  id        String   @id @default(cuid())
+  status    String
+  database  String
+  latencyMs Int
+  message   String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("health_checks")
+}
