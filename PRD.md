@@ -10,7 +10,7 @@ Sistem tidak menyatakan satu makanan sebagai "makanan paling sehat". Istilah yan
 
 ### ADMIN
 
-- Mengelola akun dan persetujuan registrasi.
+- Mengelola akun Ahli Gizi.
 - Menangguhkan atau mengaktifkan kembali akun.
 - Mereset password dan mencabut sesi.
 - Melihat monitoring, audit log, health status, dan riwayat proses.
@@ -23,7 +23,7 @@ Sistem tidak menyatakan satu makanan sebagai "makanan paling sehat". Istilah yan
 - Menjalankan TOPSIS, melihat detail, dan mengekspor laporan.
 - Tidak dapat mengakses akun, monitoring, atau audit log.
 
-Setiap akun hanya memiliki satu role. Registrasi publik selalu membuat `USER/PENDING`. Sesi baru hanya boleh dibuat untuk akun `ACTIVE`.
+Setiap akun hanya memiliki satu role. Registrasi publik selalu membuat `USER/ACTIVE`. Sesi baru hanya boleh dibuat untuk akun `ACTIVE`.
 
 ## 3. Kriteria Awal
 
@@ -97,13 +97,13 @@ Endpoint harus memeriksa permission, mengembalikan MIME type dan nama file yang 
 
 ## 8. Monitoring dan Audit
 
-Sistem mencatat registrasi, login, approval/suspend/aktivasi, reset password, pencabutan sesi, CRUD penting, impor, kalkulasi, export, health check, dan error sistem.
+Sistem mencatat registrasi, login, aktivasi/suspend, reset password, pencabutan sesi, CRUD penting, impor, kalkulasi, export, health check, dan error sistem.
 
 Dashboard Admin menampilkan jumlah akun, sesi aktif, latensi dan status database/API, proses impor/ranking/export, aktivitas terbaru, dan error terakhir. Tanpa scheduler eksternal, histori health bertambah saat endpoint monitoring/health dipanggil.
 
 ## 9. Kriteria Penerimaan
 
-- Pending tidak dapat login; ACTIVE dapat login.
+- Registrasi Ahli Gizi langsung menghasilkan akun ACTIVE yang dapat login.
 - RBAC Admin dan User saling terpisah.
 - Parser menemukan 52/50/2 sesuai workbook.
 - Angka koma, titik, dan di atas 100 diterima.

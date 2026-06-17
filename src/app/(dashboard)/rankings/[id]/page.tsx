@@ -41,6 +41,34 @@ export default async function RankingDetailPage({ params }: { params: Promise<{ 
           ))}
         </div>
 
+        <section className="overflow-hidden rounded-lg border bg-card">
+          <div className="border-b px-4 py-3">
+            <h2 className="font-semibold">Detail Jarak Solusi</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[680px] text-sm">
+              <thead className="bg-muted/70 text-left">
+                <tr>
+                  <th className="px-4 py-3">Rank</th>
+                  <th className="px-4 py-3">Makanan</th>
+                  <th className="px-4 py-3">D+</th>
+                  <th className="px-4 py-3">D-</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ranking.results.map((item) => (
+                  <tr key={item.foodId} className="border-t">
+                    <td className="px-4 py-3">#{item.rank}</td>
+                    <td className="px-4 py-3 font-medium">{item.foodName}</td>
+                    <td className="px-4 py-3">{formatNumber(item.dPositive, 6)}</td>
+                    <td className="px-4 py-3">{formatNumber(item.dNegative, 6)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         <section className="space-y-4">
           <h2 className="text-lg font-semibold">Justifikasi Peringkat</h2>
           {ranking.results.map((item) => {
@@ -49,7 +77,6 @@ export default async function RankingDetailPage({ params }: { params: Promise<{ 
               <article key={item.foodId} className="rounded-lg border bg-card p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div><p className="text-sm text-muted-foreground">Peringkat #{item.rank}</p><h3 className="text-lg font-semibold">{item.foodName}</h3></div>
-                  <p className="text-xl font-semibold text-emerald-700">Vi {formatNumber(item.preference, 6)}</p>
                 </div>
                 <p className="mt-3 text-sm">{justification.summary}</p>
                 <div className="mt-4 grid gap-4 lg:grid-cols-2">

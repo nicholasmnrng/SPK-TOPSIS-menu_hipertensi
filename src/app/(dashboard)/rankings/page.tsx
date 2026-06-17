@@ -1,10 +1,9 @@
 import Link from "next/link";
-import { RankingChart } from "@/components/charts/ranking-chart";
 import { CalculateButton } from "@/components/rankings/calculate-button";
 import { PageHeader } from "@/components/shared/page-header";
 import { PreferenceBadge } from "@/components/shared/preference-badge";
 import { requirePageUser } from "@/lib/auth/require-page-user";
-import { formatDateTime, formatNumber } from "@/lib/utils";
+import { formatDateTime } from "@/lib/utils";
 import { getRanking, getRankingHistory } from "@/server/services/topsis-service";
 
 export default async function RankingsPage() {
@@ -25,7 +24,6 @@ export default async function RankingsPage() {
           </div>
         ) : (
           <>
-            <RankingChart data={ranking.results.slice(0, 15).map((item) => ({ alternativeName: item.foodName, preference: item.preference }))} />
             <div className="overflow-hidden rounded-lg border bg-card">
               <div className="flex items-center justify-between border-b px-4 py-3">
                 <div>
@@ -37,18 +35,15 @@ export default async function RankingsPage() {
                 </Link>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[850px] text-sm">
+                <table className="w-full min-w-[640px] text-sm">
                   <thead className="bg-muted/70 text-left">
-                    <tr><th className="px-4 py-3">Rank</th><th className="px-4 py-3">Makanan</th><th className="px-4 py-3">D+</th><th className="px-4 py-3">D-</th><th className="px-4 py-3">Vi</th><th className="px-4 py-3">Status</th></tr>
+                    <tr><th className="px-4 py-3">Rank</th><th className="px-4 py-3">Makanan</th><th className="px-4 py-3">Status</th></tr>
                   </thead>
                   <tbody>
                     {ranking.results.map((item) => (
                       <tr key={item.foodId} className="border-t">
                         <td className="px-4 py-3">#{item.rank}</td>
                         <td className="px-4 py-3 font-medium">{item.foodName}</td>
-                        <td className="px-4 py-3">{formatNumber(item.dPositive, 6)}</td>
-                        <td className="px-4 py-3">{formatNumber(item.dNegative, 6)}</td>
-                        <td className="px-4 py-3 font-semibold text-emerald-700">{formatNumber(item.preference, 6)}</td>
                         <td className="px-4 py-3"><PreferenceBadge value={item.preference} /></td>
                       </tr>
                     ))}
@@ -65,7 +60,7 @@ export default async function RankingsPage() {
             {history.map((run) => (
               <Link key={run.id} href={`/rankings/${run.id}`} className="flex items-center justify-between gap-4 py-3 hover:text-emerald-700">
                 <span>{formatDateTime(run.createdAt)} | {run._count.results} makanan</span>
-                <span>{run.results[0]?.food.name ?? "-"} ({run.results[0] ? formatNumber(run.results[0].preference, 6) : "-"})</span>
+                <span>{run.results[0]?.food.name ?? "-"}</span>
               </Link>
             ))}
           </div>

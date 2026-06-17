@@ -35,10 +35,7 @@ async function main() {
   const register = await jsonRequest("/api/register", { name: "Ahli Gizi E2E", email, password });
   assert(register.status === 201, `Registrasi gagal: ${register.status} ${await register.text()}`);
   const registered = await prisma.user.findUniqueOrThrow({ where: { email } });
-  assert(registered.status === "PENDING" && registered.role === "USER", "Registrasi tidak menghasilkan USER/PENDING.");
-
-  const pendingLogin = await jsonRequest("/api/auth/sign-in/email", { email, password });
-  assert(pendingLogin.status === 403, `Login pending seharusnya 403, menerima ${pendingLogin.status}.`);
+  assert(registered.status === "ACTIVE" && registered.role === "USER", "Registrasi tidak menghasilkan USER/ACTIVE.");
 
   const admin = await prisma.user.findFirstOrThrow({ where: { role: "ADMIN" } });
   const adminPassword = process.env.ADMIN_PASSWORD ?? "ChangeMe123!";
@@ -49,13 +46,6 @@ async function main() {
   assert(adminLogin.ok, `Login Admin gagal: ${adminLogin.status} ${await adminLogin.text()}`);
   const adminCookie = cookieHeader(adminLogin);
   assert(adminCookie, "Cookie sesi Admin tidak diterbitkan.");
-
-  const approval = await jsonRequest(
-    "/api/admin/accounts",
-    { action: "APPROVE", userId: registered.id },
-    adminCookie,
-  );
-  assert(approval.ok, `Approval gagal: ${approval.status} ${await approval.text()}`);
 
   const userLogin = await jsonRequest("/api/auth/sign-in/email", { email, password });
   assert(userLogin.ok, `Login User gagal: ${userLogin.status} ${await userLogin.text()}`);
@@ -77,9 +67,7 @@ async function main() {
   assert(xlsx.ok && xlsxBytes.subarray(0, 2).toString() === "PK", "Download XLSX tidak valid.");
 
   console.log(JSON.stringify({
-    registration: "USER/PENDING",
-    pendingLogin: pendingLogin.status,
-    approval: approval.status,
+    registration: "USER/ACTIVE",
     activeLogin: userLogin.status,
     userFoods: foods.status,
     userAccounts: userAccounts.status,

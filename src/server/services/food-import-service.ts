@@ -1,4 +1,4 @@
-import { FoodImportPreview, NUTRIENT_CODES, slugifyFoodName } from "@/lib/import/food-import";
+import { FoodImportPreview, slugifyFoodName } from "@/lib/import/food-import";
 import { prisma } from "@/lib/db/prisma";
 
 export async function commitFoodImport(
@@ -10,13 +10,10 @@ export async function commitFoodImport(
   }
 
   const criteria = await prisma.criterion.findMany({
-    where: { deletedAt: null, code: { in: [...NUTRIENT_CODES] } },
+    where: { deletedAt: null },
+    orderBy: { code: "asc" },
   });
-  const criteriaByCode = new Map(criteria.map((criterion) => [criterion.code, criterion]));
-  const missing = NUTRIENT_CODES.filter((code) => !criteriaByCode.has(code));
-  if (missing.length > 0) {
-    throw new Error(`Master kriteria belum lengkap: ${missing.join(", ")}.`);
-  }
+  if (criteria.length === 0) throw new Error("Master kriteria belum tersedia.");
 
   return prisma.$transaction(async (tx) => {
     for (const row of preview.rows) {
@@ -38,8 +35,7 @@ export async function commitFoodImport(
         },
       });
 
-      for (const code of NUTRIENT_CODES) {
-        const criterion = criteriaByCode.get(code)!;
+      for (const criterion of criteria) {
         await tx.foodNutrient.upsert({
           where: {
             foodId_criterionId: {
@@ -47,11 +43,11 @@ export async function commitFoodImport(
               criterionId: criterion.id,
             },
           },
-          update: { value: row.nutrients[code] },
+          update: { value: row.nutrients[criterion.code] },
           create: {
             foodId: food.id,
             criterionId: criterion.id,
-            value: row.nutrients[code],
+            value: row.nutrients[criterion.code],
           },
         });
       }

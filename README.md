@@ -4,10 +4,10 @@ Aplikasi Next.js untuk membantu Ahli Gizi mengelola data kandungan gizi per 100 
 
 ## Role dan Alur
 
-- `ADMIN`: persetujuan akun, suspend/aktivasi, reset password, pencabutan sesi, audit log, dan monitoring teknis.
+- `ADMIN`: suspend/aktivasi akun, reset password, pencabutan sesi, audit log, dan monitoring teknis.
 - `USER`: Ahli Gizi yang mengelola kriteria, pedoman, data makanan, impor, ranking, dan laporan.
-- Registrasi publik selalu menghasilkan akun `USER` berstatus `PENDING`.
-- Akun pending atau suspended tidak dapat membuat sesi. Admin harus mengaktifkannya terlebih dahulu.
+- Registrasi publik selalu menghasilkan akun `USER` berstatus `ACTIVE`.
+- Akun suspended tidak dapat membuat sesi. Admin dapat menonaktifkan atau mengaktifkan akun dari manajemen akun.
 
 ## Data Awal
 

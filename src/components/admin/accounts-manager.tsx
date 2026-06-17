@@ -80,7 +80,7 @@ export function AccountsManager({ initialAccounts }: { initialAccounts: Account[
                     <div className="flex flex-wrap gap-2">
                       {account.status === "PENDING" ? (
                         <button onClick={() => runAction(account.id, "APPROVE")} className="rounded border px-2 py-1 hover:bg-muted">
-                          Setujui
+                          Aktifkan
                         </button>
                       ) : null}
                       {account.status === "ACTIVE" && account.role !== "ADMIN" ? (

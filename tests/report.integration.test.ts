@@ -42,5 +42,22 @@ describe("ranking snapshot and exports", () => {
       "Perhitungan TOPSIS",
       "Pedoman",
     ]);
+    expect(workbook.getWorksheet("Ranking")?.getRow(1).values).toEqual([
+      undefined,
+      "Rank",
+      "Makanan",
+      "Vi",
+      "Ringkasan",
+      "Kekuatan",
+      "Catatan",
+    ]);
+    expect(workbook.getWorksheet("Perhitungan TOPSIS")?.getRow(1).values).toEqual([
+      undefined,
+      "Rank",
+      "Makanan",
+      "Vi",
+      "Nilai Normalisasi",
+      "Nilai Terbobot",
+    ]);
   });
 });

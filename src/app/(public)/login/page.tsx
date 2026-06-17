@@ -36,7 +36,7 @@ export default function LoginPage() {
         <p className="text-sm text-emerald-600">SPK TOPSIS</p>
         <h1 className="mt-1 text-2xl font-semibold">Masuk ke aplikasi</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Akun Ahli Gizi harus disetujui Admin sebelum dapat mengakses dashboard.
+          Akun Ahli Gizi yang baru didaftarkan bisa langsung digunakan untuk mengakses dashboard.
         </p>
         <form className="mt-6 space-y-4" onSubmit={submit}>
           <label className="block">

@@ -22,8 +22,11 @@ export async function POST(request: Request) {
       where: { id: result.user.id },
       data: {
         role: "USER",
-        status: "PENDING",
-        approvedAt: null,
+        status: "ACTIVE",
+        approvedAt: new Date(),
+        banned: false,
+        banReason: null,
+        banExpires: null,
       },
     });
 

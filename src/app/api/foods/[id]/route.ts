@@ -3,9 +3,8 @@ import { getCurrentUser } from "@/lib/auth/auth";
 import { assertPermission } from "@/lib/rbac/permissions";
 import { prisma } from "@/lib/db/prisma";
 import { apiError } from "@/lib/api/response";
-import { foodSchema } from "@/lib/validations/food";
+import { buildFoodSchema } from "@/lib/validations/food";
 import {
-  NUTRIENT_CODES,
   normalizeFoodName,
   slugifyFoodName,
 } from "@/lib/import/food-import";
@@ -18,11 +17,13 @@ export async function PATCH(request: Request, context: Context) {
     const user = await getCurrentUser(request.headers);
     assertPermission(user.role, "foods:manage");
     const { id } = await context.params;
-    const payload = foodSchema.parse(await request.json());
     const criteria = await prisma.criterion.findMany({
-      where: { deletedAt: null, code: { in: [...NUTRIENT_CODES] } },
+      where: { deletedAt: null },
+      select: { id: true, code: true },
+      orderBy: { code: "asc" },
     });
-    const criteriaByCode = new Map(criteria.map((criterion) => [criterion.code, criterion.id]));
+    if (criteria.length === 0) throw new Error("Master kriteria belum tersedia.");
+    const payload = buildFoodSchema(criteria).parse(await request.json());
 
     const food = await prisma.$transaction(async (tx) => {
       await tx.food.update({
@@ -34,12 +35,11 @@ export async function PATCH(request: Request, context: Context) {
           description: payload.description,
         },
       });
-      for (const code of NUTRIENT_CODES) {
-        const criterionId = criteriaByCode.get(code)!;
+      for (const criterion of criteria) {
         await tx.foodNutrient.upsert({
-          where: { foodId_criterionId: { foodId: id, criterionId } },
-          update: { value: payload.nutrients[code] },
-          create: { foodId: id, criterionId, value: payload.nutrients[code] },
+          where: { foodId_criterionId: { foodId: id, criterionId: criterion.id } },
+          update: { value: payload.nutrients[criterion.code] },
+          create: { foodId: id, criterionId: criterion.id, value: payload.nutrients[criterion.code] },
         });
       }
       return tx.food.findUniqueOrThrow({

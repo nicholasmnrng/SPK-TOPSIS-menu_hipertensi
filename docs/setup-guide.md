@@ -49,7 +49,7 @@ Aturan:
 
 ## Akun
 
-Admin awal berasal dari environment. Ahli Gizi mendaftar melalui `/register`, lalu Admin menyetujui dari `/accounts`.
+Admin awal berasal dari environment. Ahli Gizi mendaftar melalui `/register` dan akunnya langsung aktif. Admin tetap dapat mengatur status akun dari `/accounts`.
 
 ## Validasi Lokal
 

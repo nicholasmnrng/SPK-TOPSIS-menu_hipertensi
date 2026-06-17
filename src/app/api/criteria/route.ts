@@ -6,6 +6,8 @@ import { prisma } from "@/lib/db/prisma";
 import { apiError } from "@/lib/api/response";
 import { writeAuditLog } from "@/lib/audit/audit";
 
+const MAX_ACTIVE_CRITERIA = 10;
+
 export async function GET(request: Request) {
   try {
     const user = await getCurrentUser(request.headers);
@@ -29,6 +31,10 @@ export async function POST(request: Request) {
   try {
     const user = await getCurrentUser(request.headers);
     assertPermission(user.role, "criteria:manage");
+    const activeCount = await prisma.criterion.count({ where: { deletedAt: null } });
+    if (activeCount >= MAX_ACTIVE_CRITERIA) {
+      throw new Error(`Maksimal ${MAX_ACTIVE_CRITERIA} kriteria aktif.`);
+    }
     const payload = criterionSchema.parse(await request.json());
     const data = await prisma.criterion.create({ data: payload });
     await writeAuditLog({

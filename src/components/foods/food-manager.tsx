@@ -2,8 +2,12 @@
 
 import { FormEvent, useMemo, useState } from "react";
 
-const NUTRIENT_CODES = ["PROTEIN", "FAT", "CARBOHYDRATE", "FIBER", "SODIUM"] as const;
-type NutrientCode = (typeof NUTRIENT_CODES)[number];
+type Criterion = {
+  id: string;
+  code: string;
+  name: string;
+  unit: string;
+};
 
 type Food = {
   id: string;
@@ -11,14 +15,14 @@ type Food = {
   description: string | null;
   source: string | null;
   complete: boolean;
-  nutrients: Record<NutrientCode, { value: number | null; name: string; unit: string }>;
+  nutrients: Record<string, { value: number | null; name: string; unit: string }>;
 };
 
 type Preview = {
   rows: Array<{
     rowNumber: number;
     name: string;
-    nutrients: Record<NutrientCode, number | string | null>;
+    nutrients: Record<string, number | string | null>;
     errors: string[];
   }>;
   totalRows: number;
@@ -27,7 +31,16 @@ type Preview = {
   errorRows: number;
 };
 
-export function FoodManager({ initialFoods }: { initialFoods: Food[] }) {
+function getApiMessage(payload: { error?: { message?: string; fields?: Record<string, string[]> } }, fallback: string) {
+  const fieldMessages = payload.error?.fields
+    ? Object.entries(payload.error.fields)
+        .flatMap(([field, messages]) => messages.map((message) => `${field}: ${message}`))
+        .join(" ")
+    : "";
+  return fieldMessages || payload.error?.message || fallback;
+}
+
+export function FoodManager({ criteria, initialFoods }: { criteria: Criterion[]; initialFoods: Food[] }) {
   const [foods, setFoods] = useState(initialFoods);
   const [selected, setSelected] = useState<Food | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -43,11 +56,12 @@ export function FoodManager({ initialFoods }: { initialFoods: Food[] }) {
 
   async function saveFood(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const target = event.currentTarget;
+    const form = new FormData(target);
     const body = {
       name: form.get("name"),
       description: form.get("description"),
-      nutrients: Object.fromEntries(NUTRIENT_CODES.map((code) => [code, form.get(code)])),
+      nutrients: Object.fromEntries(criteria.map((criterion) => [criterion.code, form.get(criterion.code)])),
     };
     const response = await fetch(selected ? `/api/foods/${selected.id}` : "/api/foods", {
       method: selected ? "PATCH" : "POST",
@@ -55,10 +69,14 @@ export function FoodManager({ initialFoods }: { initialFoods: Food[] }) {
       body: JSON.stringify(body),
     });
     const payload = await response.json();
-    setMessage(response.ok ? "Data makanan tersimpan." : payload.error?.message ?? "Gagal menyimpan.");
+    setMessage(
+      response.ok
+        ? "Data makanan tersimpan. Jika semua nilai kriteria lengkap, buka menu Ranking lalu klik Hitung Ulang TOPSIS agar masuk ranking terbaru."
+        : getApiMessage(payload, "Gagal menyimpan."),
+    );
     if (response.ok) {
       setSelected(null);
-      event.currentTarget.reset();
+      target.reset();
       await reload();
     }
   }
@@ -106,7 +124,7 @@ export function FoodManager({ initialFoods }: { initialFoods: Food[] }) {
       <section className="rounded-lg border bg-card p-5">
         <h2 className="font-semibold">Impor Excel / CSV</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Header: Nama Bahan Makanan, Protein, Lemak, Karbohidrat, Serat, Natrium.
+          Header: Nama Bahan Makanan, {criteria.map((criterion) => criterion.code).join(", ")}.
         </p>
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <input type="file" accept=".xlsx,.csv" onChange={(event) => setFile(event.target.files?.[0] ?? null)} />
@@ -121,14 +139,14 @@ export function FoodManager({ initialFoods }: { initialFoods: Food[] }) {
         </div>
         {preview ? (
           <div className="mt-4 rounded-md bg-muted p-4 text-sm">
-            Total {preview.totalRows} · Valid {preview.validRows} · Belum lengkap {preview.incompleteRows} · Error {preview.errorRows}
+            Total {preview.totalRows} - Valid {preview.validRows} - Belum lengkap {preview.incompleteRows} - Error {preview.errorRows}
             <div className="mt-3 max-h-96 overflow-auto rounded border bg-background">
               <table className="w-full min-w-[850px] text-xs">
                 <thead className="sticky top-0 bg-muted">
                   <tr>
                     <th className="px-2 py-2 text-left">Baris</th>
                     <th className="px-2 py-2 text-left">Nama</th>
-                    {NUTRIENT_CODES.map((code) => <th key={code} className="px-2 py-2 text-left">{code}</th>)}
+                    {criteria.map((criterion) => <th key={criterion.id} className="px-2 py-2 text-left">{criterion.code}</th>)}
                     <th className="px-2 py-2 text-left">Validasi</th>
                   </tr>
                 </thead>
@@ -147,16 +165,16 @@ export function FoodManager({ initialFoods }: { initialFoods: Food[] }) {
                           className="w-40 rounded border px-2 py-1"
                         />
                       </td>
-                      {NUTRIENT_CODES.map((code) => (
-                        <td key={code} className="px-2 py-2">
+                      {criteria.map((criterion) => (
+                        <td key={criterion.id} className="px-2 py-2">
                           <input
                             inputMode="decimal"
-                            value={row.nutrients[code] ?? ""}
+                            value={row.nutrients[criterion.code] ?? ""}
                             onChange={(event) => {
                               const rows = [...preview.rows];
                               rows[rowIndex] = {
                                 ...row,
-                                nutrients: { ...row.nutrients, [code]: event.target.value as unknown as number },
+                                nutrients: { ...row.nutrients, [criterion.code]: event.target.value },
                               };
                               setPreview({ ...preview, rows });
                             }}
@@ -182,13 +200,13 @@ export function FoodManager({ initialFoods }: { initialFoods: Food[] }) {
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <input name="name" required defaultValue={selected?.name ?? ""} placeholder="Nama makanan" className="rounded-md border px-3 py-2 text-sm" />
           <input name="description" defaultValue={selected?.description ?? ""} placeholder="Deskripsi opsional" className="rounded-md border px-3 py-2 text-sm" />
-          {NUTRIENT_CODES.map((code) => (
-            <label key={`${selected?.id ?? "new"}-${code}`} className="text-sm">
-              <span>{code}</span>
+          {criteria.map((criterion) => (
+            <label key={`${selected?.id ?? "new"}-${criterion.id}`} className="text-sm">
+              <span>{criterion.name} ({criterion.unit})</span>
               <input
-                name={code}
+                name={criterion.code}
                 inputMode="decimal"
-                defaultValue={selected?.nutrients[code]?.value ?? ""}
+                defaultValue={selected?.nutrients[criterion.code]?.value ?? ""}
                 placeholder="0,00"
                 className="mt-1 w-full rounded-md border px-3 py-2"
               />
@@ -208,7 +226,7 @@ export function FoodManager({ initialFoods }: { initialFoods: Food[] }) {
             <thead className="bg-muted/70 text-left">
               <tr>
                 <th className="px-4 py-3">Makanan</th>
-                {NUTRIENT_CODES.map((code) => <th key={code} className="px-4 py-3">{code}</th>)}
+                {criteria.map((criterion) => <th key={criterion.id} className="px-4 py-3">{criterion.code}</th>)}
                 <th className="px-4 py-3">Kelengkapan</th>
                 <th className="px-4 py-3">Aksi</th>
               </tr>
@@ -217,9 +235,9 @@ export function FoodManager({ initialFoods }: { initialFoods: Food[] }) {
               {foods.map((food) => (
                 <tr key={food.id} className="border-t">
                   <td className="px-4 py-3 font-medium">{food.name}</td>
-                  {NUTRIENT_CODES.map((code) => (
-                    <td key={code} className="px-4 py-3">
-                      {food.nutrients[code]?.value ?? "-"} {food.nutrients[code]?.unit}
+                  {criteria.map((criterion) => (
+                    <td key={criterion.id} className="px-4 py-3">
+                      {food.nutrients[criterion.code]?.value ?? "-"} {food.nutrients[criterion.code]?.unit ?? criterion.unit}
                     </td>
                   ))}
                   <td className="px-4 py-3">{food.complete ? "Lengkap" : "Belum lengkap"}</td>

@@ -5,6 +5,16 @@ import { parseFoodFile } from "@/lib/import/food-import";
 import { apiError } from "@/lib/api/response";
 import { prisma } from "@/lib/db/prisma";
 
+async function getImportCriteria() {
+  const criteria = await prisma.criterion.findMany({
+    where: { deletedAt: null },
+    select: { code: true, name: true },
+    orderBy: { code: "asc" },
+  });
+  if (criteria.length === 0) throw new Error("Master kriteria belum tersedia.");
+  return criteria;
+}
+
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser(request.headers);
@@ -12,7 +22,8 @@ export async function POST(request: Request) {
     const form = await request.formData();
     const file = form.get("file");
     if (!(file instanceof File)) throw new Error("File wajib dipilih.");
-    const preview = await parseFoodFile(file.name, Buffer.from(await file.arrayBuffer()));
+    const criteria = await getImportCriteria();
+    const preview = await parseFoodFile(file.name, Buffer.from(await file.arrayBuffer()), criteria);
 
     await prisma.importRun.create({
       data: {

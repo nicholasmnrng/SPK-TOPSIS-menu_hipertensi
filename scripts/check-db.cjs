@@ -7,14 +7,29 @@ async function main() {
     "SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename",
   );
   const counts = {
-    roles: await prisma.role.count(),
+    users: await prisma.user.count(),
     criteria: await prisma.criterion.count(),
-    alternatives: await prisma.alternative.count(),
-    assessments: await prisma.assessment.count(),
+    foods: await prisma.food.count(),
+    foodNutrients: await prisma.foodNutrient.count(),
+    importRuns: await prisma.importRun.count(),
+    rankingRuns: await prisma.rankingRun.count(),
     migrations: await prisma.$queryRawUnsafe('SELECT COUNT(*)::int AS count FROM "_prisma_migrations"'),
   };
+  const criteria = await prisma.criterion.findMany({
+    where: { deletedAt: null },
+    orderBy: { code: "asc" },
+    select: { code: true, name: true, unit: true, weight: true, attribute: true },
+  });
+  const nutrientHealth = {
+    negativeValues: await prisma.foodNutrient.count({
+      where: { value: { lt: 0 } },
+    }),
+    incompleteValues: await prisma.foodNutrient.count({
+      where: { value: null },
+    }),
+  };
 
-  console.log(JSON.stringify({ tables, counts }, null, 2));
+  console.log(JSON.stringify({ tables, counts, criteria, nutrientHealth }, null, 2));
 }
 
 main()

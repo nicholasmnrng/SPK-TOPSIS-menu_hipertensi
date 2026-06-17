@@ -23,7 +23,7 @@ export default async function AccountsPage() {
   });
   return (
     <>
-      <PageHeader title="Manajemen Akun" description="Setujui registrasi Ahli Gizi, atur status akun, reset password, dan cabut sesi." />
+      <PageHeader title="Manajemen Akun" description="Pantau akun Ahli Gizi, atur status akun, reset password, dan cabut sesi." />
       <main className="p-6">
         <AccountsManager initialAccounts={accounts.map((account) => ({
           ...account,

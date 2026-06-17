@@ -10,10 +10,11 @@ export default function RegisterPage() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const target = event.currentTarget;
     setLoading(true);
     setError("");
     setMessage("");
-    const form = new FormData(event.currentTarget);
+    const form = new FormData(target);
     const response = await fetch("/api/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -31,8 +32,8 @@ export default function RegisterPage() {
       return;
     }
 
-    event.currentTarget.reset();
-    setMessage("Registrasi berhasil. Akun menunggu persetujuan Admin.");
+    target.reset();
+    setMessage("Registrasi berhasil. Akun Ahli Gizi sudah aktif dan bisa langsung login.");
   }
 
   return (

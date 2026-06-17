@@ -4,7 +4,7 @@
 
 - Better Auth credential session dan penolakan akun nonaktif.
 - Role tunggal `ADMIN`/`USER` beserta RBAC page dan API.
-- Registrasi pending dan tindakan akun Admin.
+- Registrasi Ahli Gizi langsung aktif dan tindakan akun Admin.
 - Schema Prisma redesign dan migration.
 - Seed 52 makanan dari workbook resmi.
 - Master kriteria dan pedoman.
@@ -50,7 +50,7 @@ Route `/alternatives`, `/assessments`, dan `/rankings/demo` diarahkan ke alur ba
 - Prisma schema valid.
 - TypeScript typecheck lulus.
 - 17 test lulus.
-- E2E HTTP lulus untuk pending login, approval, RBAC, PDF, dan XLSX.
+- E2E HTTP lulus untuk registrasi aktif, RBAC, PDF, dan XLSX.
 - Database berisi 52 makanan dan 260 nilai.
 - 2 makanan incomplete.
 - Kwaci berada di peringkat pertama dengan `0.7262104113824646`.

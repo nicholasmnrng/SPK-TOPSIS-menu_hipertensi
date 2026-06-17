@@ -71,7 +71,7 @@ export async function buildRankingPdf(ranking: Ranking) {
       cautions: Array<{ message: string }>;
     };
     drawLine(
-      `#${result.rank} ${result.foodName} | Vi ${result.preference.toFixed(6)} | D+ ${result.dPositive.toFixed(6)} | D- ${result.dNegative.toFixed(6)}`,
+      `#${result.rank} ${result.foodName} | Vi ${result.preference.toFixed(6)}`,
       { bold: true },
     );
     for (const line of wrap(
@@ -126,7 +126,7 @@ export async function buildRankingWorkbook(ranking: Ranking) {
   summary.getCell("A8").alignment = { wrapText: true, vertical: "top" };
 
   const rankingSheet = workbook.addWorksheet("Ranking");
-  rankingSheet.addRow(["Rank", "Makanan", "D+", "D-", "Vi", "Ringkasan", "Kekuatan", "Catatan"]);
+  rankingSheet.addRow(["Rank", "Makanan", "Vi", "Ringkasan", "Kekuatan", "Catatan"]);
   for (const result of ranking.results) {
     const justification = result.justification as {
       summary: string;
@@ -136,8 +136,6 @@ export async function buildRankingWorkbook(ranking: Ranking) {
     rankingSheet.addRow([
       result.rank,
       result.foodName,
-      result.dPositive,
-      result.dNegative,
       result.preference,
       justification.summary,
       justification.strengths.map((item) => item.message).join(" | "),
@@ -145,11 +143,10 @@ export async function buildRankingWorkbook(ranking: Ranking) {
     ]);
   }
   rankingSheet.columns = [
-    { width: 8 }, { width: 40 }, { width: 14 }, { width: 14 },
-    { width: 14 }, { width: 55 }, { width: 70 }, { width: 70 },
+    { width: 8 }, { width: 40 }, { width: 14 }, { width: 55 }, { width: 70 }, { width: 70 },
   ];
   rankingSheet.views = [{ state: "frozen", ySplit: 1 }];
-  rankingSheet.autoFilter = "A1:H1";
+  rankingSheet.autoFilter = "A1:F1";
 
   const nutrients = workbook.addWorksheet("Data Gizi");
   const criteria = ranking.criteriaSnapshot as Array<{ id: string; name: string; unit: string }>;
@@ -164,7 +161,7 @@ export async function buildRankingWorkbook(ranking: Ranking) {
   nutrients.autoFilter = `A1:${String.fromCharCode(65 + criteria.length)}1`;
 
   const calculation = workbook.addWorksheet("Perhitungan TOPSIS");
-  calculation.addRow(["Rank", "Makanan", "D+", "D-", "Vi", "Nilai Normalisasi", "Nilai Terbobot"]);
+  calculation.addRow(["Rank", "Makanan", "Vi", "Nilai Normalisasi", "Nilai Terbobot"]);
   for (const result of ranking.results) {
     const detail = result.detail as {
       normalized: Record<string, number>;
@@ -173,19 +170,16 @@ export async function buildRankingWorkbook(ranking: Ranking) {
     calculation.addRow([
       result.rank,
       result.foodName,
-      result.dPositive,
-      result.dNegative,
       result.preference,
       JSON.stringify(detail.normalized),
       JSON.stringify(detail.weighted),
     ]);
   }
   calculation.addRow([]);
-  calculation.addRow(["Solusi Ideal Positif", "", "", "", "", JSON.stringify(ranking.idealPositive)]);
-  calculation.addRow(["Solusi Ideal Negatif", "", "", "", "", JSON.stringify(ranking.idealNegative)]);
+  calculation.addRow(["Solusi Ideal Positif", "", "", JSON.stringify(ranking.idealPositive)]);
+  calculation.addRow(["Solusi Ideal Negatif", "", "", JSON.stringify(ranking.idealNegative)]);
   calculation.columns = [
-    { width: 8 }, { width: 40 }, { width: 14 }, { width: 14 },
-    { width: 14 }, { width: 80 }, { width: 80 },
+    { width: 8 }, { width: 40 }, { width: 14 }, { width: 80 }, { width: 80 },
   ];
   calculation.views = [{ state: "frozen", ySplit: 1 }];
 

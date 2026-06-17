@@ -13,7 +13,7 @@ const criteria = [
 ];
 
 describe("TOPSIS workbook baseline", () => {
-  it("ranks Kwaci first at the approved baseline", async () => {
+  it("ranks Kwaci first using raw values and benefit/cost attributes", async () => {
     const preview = await parseFoodWorkbook(
       await fs.readFile(path.join(process.cwd(), "docs", "spk_topsis_k.xlsx")),
     );
@@ -30,5 +30,20 @@ describe("TOPSIS workbook baseline", () => {
     expect(result.results).toHaveLength(50);
     expect(result.results[0].alternativeName).toBe("Kwaci");
     expect(result.results[0].preference).toBeCloseTo(0.726210, 6);
+  });
+
+  it("treats lower raw values as better for COST criteria", () => {
+    const result = calculateTopsis({
+      criteria: [
+        { id: "fiber", code: "FIBER", name: "Serat", weight: 0.5, attribute: "BENEFIT" },
+        { id: "sodium", code: "SODIUM", name: "Natrium", weight: 0.5, attribute: "COST" },
+      ],
+      alternatives: [
+        { id: "a", name: "A", scores: { fiber: 10, sodium: 500 } },
+        { id: "b", name: "B", scores: { fiber: 10, sodium: 100 } },
+      ],
+    });
+
+    expect(result.results[0].alternativeName).toBe("B");
   });
 });

@@ -39,7 +39,7 @@ export const auth = betterAuth({
             throw new APIError("FORBIDDEN", {
               message:
                 user?.status === "PENDING"
-                  ? "Akun menunggu persetujuan Admin."
+                  ? "Akun belum aktif. Hubungi Admin."
                   : "Akun sedang ditangguhkan.",
               code: "ACCOUNT_NOT_ACTIVE",
             });
@@ -108,7 +108,7 @@ export async function getCurrentUser(
   if (!options.allowInactive && (user.status !== "ACTIVE" || user.banned)) {
     throw new AuthorizationError(
       user.status === "PENDING"
-        ? "Akun menunggu persetujuan Admin."
+        ? "Akun belum aktif. Hubungi Admin."
         : "Akun sedang ditangguhkan.",
       403,
     );

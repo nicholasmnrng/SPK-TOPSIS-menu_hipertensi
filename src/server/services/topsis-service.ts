@@ -51,9 +51,10 @@ function buildJustification(
   medians: Record<string, number>,
   idealPositive: Record<string, number>,
   idealNegative: Record<string, number>,
+  rawScores: Record<string, number>,
 ): RankingJustification {
   const factors = criteria.map((criterion) => {
-    const value = result.scores[criterion.id];
+    const value = rawScores[criterion.id] ?? result.scores[criterion.id];
     const medianValue = medians[criterion.id];
     const favorable = criterion.attribute === "BENEFIT"
       ? value >= medianValue
@@ -148,14 +149,27 @@ export async function calculateActiveDataRanking(userId: string) {
     throw new Error("Tidak ada makanan dengan data gizi lengkap.");
   }
 
+  const calculationCriteria = criteria.map((criterion) => ({
+    id: criterion.id,
+    code: criterion.code,
+    name: criterion.name,
+    weight: criterion.weight,
+    attribute: criterion.attribute,
+  }));
+  const rawScoresByFoodId = new Map(
+    completeFoods.map((food) => [
+      food.id,
+      Object.fromEntries(
+        criteria.map((criterion) => [
+          criterion.id,
+          food.nutrients.find((nutrient) => nutrient.criterionId === criterion.id)!.value!,
+        ]),
+      ) as Record<string, number>,
+    ]),
+  );
+
   const input = {
-    criteria: criteria.map((criterion) => ({
-      id: criterion.id,
-      code: criterion.code,
-      name: criterion.name,
-      weight: criterion.weight,
-      attribute: criterion.attribute,
-    })),
+    criteria: calculationCriteria,
     alternatives: completeFoods.map((food) => ({
       id: food.id,
       name: food.name,
@@ -172,7 +186,7 @@ export async function calculateActiveDataRanking(userId: string) {
   const medians = Object.fromEntries(
     criteria.map((criterion) => [
       criterion.id,
-      median(input.alternatives.map((food) => food.scores[criterion.id])),
+      median(completeFoods.map((food) => rawScoresByFoodId.get(food.id)![criterion.id])),
     ]),
   );
   const guidelineSnapshot = Array.from(
@@ -225,6 +239,7 @@ export async function calculateActiveDataRanking(userId: string) {
         preference: result.preference,
         detail: asJson({
           scores: result.scores,
+          rawNutrients: rawScoresByFoodId.get(result.alternativeId),
           normalized: result.normalized,
           weighted: result.weighted,
           medians,
@@ -236,6 +251,7 @@ export async function calculateActiveDataRanking(userId: string) {
               medians,
               calculation.idealPositive,
               calculation.idealNegative,
+              rawScoresByFoodId.get(result.alternativeId) ?? result.scores,
             ),
           ),
       })),

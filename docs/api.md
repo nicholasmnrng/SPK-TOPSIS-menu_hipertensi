@@ -10,7 +10,7 @@ Semua endpoint selain registrasi, auth, dan health memerlukan cookie sesi Better
 
 | Method | Endpoint | Fungsi |
 | --- | --- | --- |
-| POST | `/api/register` | Membuat akun `USER/PENDING` |
+| POST | `/api/register` | Membuat akun `USER/ACTIVE` |
 | GET/POST | `/api/auth/[...all]` | Better Auth |
 | GET | `/api/health` | Status API/database dan latensi |
 
@@ -19,7 +19,7 @@ Semua endpoint selain registrasi, auth, dan health memerlukan cookie sesi Better
 | Method | Endpoint | Permission |
 | --- | --- | --- |
 | GET | `/api/admin/accounts` | `users:manage` |
-| POST | `/api/admin/accounts` | Approval, suspend, activate, reset password, revoke session |
+| POST | `/api/admin/accounts` | Activate, suspend, reset password, revoke session |
 | GET | `/api/admin/monitoring` | `monitoring:read` |
 | GET | `/api/admin/audit-logs` | `audit:read` |
 
@@ -29,7 +29,7 @@ Payload aksi akun:
 { "action": "APPROVE", "userId": "..." }
 ```
 
-Nilai `action`: `APPROVE`, `SUSPEND`, `ACTIVATE`, `RESET_PASSWORD`, `REVOKE_SESSIONS`.
+Nilai `action`: `APPROVE` untuk mengaktifkan akun pending lama, `SUSPEND`, `ACTIVATE`, `RESET_PASSWORD`, `REVOKE_SESSIONS`.
 
 ## Kriteria dan Pedoman
 

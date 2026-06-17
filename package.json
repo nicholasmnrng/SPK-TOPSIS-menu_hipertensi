@@ -12,7 +12,8 @@
     "test:e2e:http": "tsx tests/e2e-http.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "prisma db seed"
+    "prisma:seed": "prisma db seed",
+    "data:check-db": "node scripts/check-db.cjs"
   },
   "dependencies": {
     "@prisma/client": "^6.8.2",

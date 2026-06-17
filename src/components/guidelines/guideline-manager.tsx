@@ -26,7 +26,8 @@ export function GuidelineManager({
 
   async function add(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const target = event.currentTarget;
+    const form = new FormData(target);
     const response = await fetch("/api/guidelines", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -46,7 +47,7 @@ export function GuidelineManager({
       return;
     }
     setItems((current) => [payload.data, ...current]);
-    event.currentTarget.reset();
+    target.reset();
     setMessage("Pedoman ditambahkan.");
   }
 
